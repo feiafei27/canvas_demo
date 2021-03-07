@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="shootBall-style.css">
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+    <div id="info">
+        Launch velocity (m/s):
+        <output id="velocityOut"></output> m/s<br/>
+
+        Launch angle (degrees):
+        <output id="angleOut"></output> degrees <br/>
+    </div>
+
+    <div id="introduce">
+        <h3>这是一款模拟真实世界重力的扔小球游戏。</h3>
+        <p>玩家通过点击，移动鼠标控制小球的方向和初速度，</p>
+        <p>相关参数会实时的显示在左上角的信息框中。</p>
+        <p>松开鼠标，小球投出，若投入箱子中加2分，每轮有5次机会。</p>
+        <button id="qbtn">确定</button>
+    </div>
+
+    <div id="end">
+        <p>你的次数已用完，是否继续？</p>
+        <button id="end-btn">确定</button>
+    </div>
+
+    <script type="text/javascript" src="windowToCanvas.js"></script>
+    <script type="text/javascript" src="AnimateTime.js"></script>
+    <script type="text/javascript" src="Sprite.js"></script>
+    <script type="text/javascript" src="shootBall-javascript.js"></script>
+
+</body>
+</html>

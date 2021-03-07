@@ -1,0 +1,14 @@
+html,body {
+    padding: 0px;
+    margin: 0px;
+}
+
+#canvas {
+    display: block;
+    background-color: rgba(177,177,185,0.46);
+}
+
+#btn {
+    display: block;
+    margin: 10px;
+}

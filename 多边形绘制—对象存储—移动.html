@@ -1,0 +1,358 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HTML5 Canvas核心技术</title>
+
+<style type="text/css">
+	
+	html,body {
+		padding:0px;
+		margin: 0px;
+	}
+	
+	#canvas {
+		display:block;
+		background: #D2D2D2;
+	}
+	
+	#control {
+		height:3vh;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	
+	#infoPrompt {
+		position:absolute;
+		width: 400px;
+		height: 200px;
+		background: rgba(255, 205, 68,0.7);
+		border-radius: 10px;
+	}
+	
+	#info {
+		padding-left:10px;
+		padding-right: 10px;
+	}
+	
+	#btn {
+		display: block;
+		width:80%;
+		height: 30px;
+		margin-top:50px;
+		margin-left: auto;
+		margin-right: auto;
+		border-radius: 5px;
+		background: rgba(0,255,0,0.8);
+		border: solid 1px black;
+	}
+		
+</style>
+<script type="text/javascript">
+	
+	window.onload=function(){
+		
+		var canvas=document.getElementById("canvas"),
+			pen=canvas.getContext("2d");
+		
+		var	strokeStyleSelect=document.getElementById("strokeStyleSelect"),
+			fillStyleSelect=document.getElementById("fillStyleSelect"),
+			sidesSelect=document.getElementById("sides"),
+			startAngleSelect=document.getElementById("startAngle"),
+			editChecked=document.getElementById("editChecked"),
+			fillChecked=document.getElementById("fillChecked"),
+			eraseAll=document.getElementById("eraseButton"),
+			infoPrompt=document.getElementById("infoPrompt");
+		
+		var strokeStyle=strokeStyleSelect.value,
+			fillStyle=fillStyleSelect.value,
+			sidesNumber=Number(sidesSelect.value),
+			startAngle=Math.PI/180*Number(startAngleSelect.value);
+		
+		var isFill=fillChecked.checked,
+			isEdit=editChecked.checked,
+			isEditDragging=false;
+		
+		var mouseDown={
+				x:0,
+				y:0
+			},
+			Point=function(x,y){
+				this.x=x;
+				this.y=y;
+			},
+			polygons=[],
+			polygonDemo,
+			canvasImageData,
+			EditCanvasImageData,
+			choosePolygonIndex=null,
+			isDragging=false;
+		
+		//...............初始化..............
+		infoPrompt.style.top=window.innerHeight/2-100+"px";
+		infoPrompt.style.left=window.innerWidth/2-200+"px";
+		canvas.width=window.innerWidth;
+		canvas.height=0.97*window.innerHeight;
+		drawGrid("rgba(0,0,0,0.2)",10,10);
+		
+		//...............多边形构造函数对象................
+		function polygon(x,y,r,sides,angle,fillstyle,strokestyle,isfill){
+			this.x=x;
+			this.y=y;
+			this.r=r;
+			this.sides=sides;
+			this.angle=angle;
+			this.fillStyle=fillstyle;
+			this.strokeStyle=strokestyle;
+			this.isFill=isfill;
+		}
+		//..............多边形构造函数对象的原型对象...........
+		polygon.prototype={
+			getPoints:function(){
+				var points=[],
+					angle=0;
+				for(var i=0;i<this.sides;++i){
+					points.push(new Point(0+this.r*Math.sin(angle),0+this.r*Math.cos(angle)));
+					angle+=Math.PI*2/this.sides;
+				}
+				return points;
+			},
+			drawPath:function(){
+				var points=this.getPoints();
+				pen.beginPath();
+				pen.save();
+				//.............转换坐标系................
+				pen.translate(this.x,this.y);
+				pen.rotate(this.angle);
+				pen.moveTo(points[0].x,points[0].y);
+				for(var i=1;i<this.sides;++i){
+					pen.lineTo(points[i].x,points[i].y);
+				}
+				pen.closePath();
+				pen.restore();
+			},
+			drawPolygon:function(){
+				this.drawPath();
+				pen.save();
+				pen.strokeStyle=this.strokeStyle;
+				pen.fillStyle=this.fillStyle;
+				pen.stroke();
+				if(isFill){
+					pen.fill();
+				}
+				pen.restore();
+			},
+			movePolygon:function(x,y){
+				this.x=x;
+				this.y=y;
+			},
+			changeRadius:function(r){
+				this.r=r;
+			},
+			//.........传入的ang为弧度值..................
+			changeAngle:function(ang){
+				this.angle+=ang;
+			}
+		}
+		//..............function..................
+		function drawGrid(lineColor,stepX,stepY){
+			pen.save();
+			pen.strokeStyle=lineColor;
+			pen.lineWidth=0.5;
+			pen.beginPath();
+			for(var i=0.5+stepX;i<canvas.width;i+=stepX){
+				pen.moveTo(i,0);
+				pen.lineTo(i,canvas.height);
+			}
+			for(var i=0.5+stepY;i<canvas.height;i+=stepY){
+				pen.moveTo(0,i);
+				pen.lineTo(canvas.width,i);
+			}
+			pen.stroke();
+			pen.restore();
+		}
+		
+		function windowToCanvas(x,y){
+			var canvasBounds=canvas.getBoundingClientRect();
+			return {
+				x:x-canvasBounds.left,
+				y:y-canvasBounds.top
+			}
+		}
+		
+		function getR(startX,startY,endX,endY){
+			return Math.sqrt(Math.pow((startX-endX),2)+Math.pow((startY-endY),2));
+		}
+		
+		//..............鼠标事件......................
+		canvas.onmousedown=function(e){
+			e.preventDefault();
+			var loc=windowToCanvas(e.clientX,e.clientY);
+			if(!isEdit){
+				isDragging=true;
+				canvasImageData=pen.getImageData(0,0,canvas.width,canvas.height);
+				polygonDemo=new polygon(loc.x,loc.y,0,sidesNumber,startAngle,fillStyle,strokeStyle,isFill);
+			}else{
+				isEditDragging=true;
+				pen.clearRect(0,0,canvas.width,canvas.height);
+				drawGrid("rgba(0,0,0,0.2)",10,10);
+				polygons.forEach(function(poly,index,arr){
+					poly.drawPath();
+					if(pen.isPointInPath(loc.x,loc.y)){
+						choosePolygonIndex=index;
+					}else{
+						poly.drawPolygon();
+					}
+				});
+				if(choosePolygonIndex!=null){
+					EditCanvasImageData=pen.getImageData(0,0,canvas.width,canvas.height);
+					polygons[choosePolygonIndex].drawPolygon();
+				}
+			}
+		}
+		
+		canvas.onmousemove=function(e){
+			e.preventDefault();
+			var mouseLoc=windowToCanvas(e.clientX,e.clientY);
+			if(!isEdit){
+				if(isDragging){
+					pen.putImageData(canvasImageData,0,0);
+					var nowR=getR(mouseLoc.x,mouseLoc.y,polygonDemo.x,polygonDemo.y);
+					polygonDemo.r=nowR;
+					polygonDemo.drawPolygon();
+				}
+			}else if(isEditDragging && (choosePolygonIndex!=null)){
+				pen.putImageData(EditCanvasImageData,0,0);
+				polygons[choosePolygonIndex].movePolygon(mouseLoc.x,mouseLoc.y);
+				polygons[choosePolygonIndex].drawPolygon();
+			}
+		}
+		
+		canvas.onmouseup=function(e){
+			e.preventDefault();
+			if(!isEdit){
+				isDragging=false;
+				polygons.push(polygonDemo);
+			}else{
+				isEditDragging=false;
+				choosePolygonIndex=null;
+			}
+		}
+		
+		btn.onclick=function(){
+			infoPrompt.style.display="none";
+			
+		}
+		//..............select,checked,button事件..............
+		strokeStyleSelect.onchange=function(){
+			strokeStyle=strokeStyleSelect.value;
+		}
+		
+		fillStyleSelect.onchange=function(){
+			fillStyle=fillStyleSelect.value;
+		}
+		
+		sidesSelect.onchange=function(){
+			sidesNumber=Number(sidesSelect.value);
+		}
+		
+		startAngleSelect.onchange=function(){
+			startAngle=Math.PI/180*Number(startAngleSelect.value);
+		}
+		
+		fillChecked.onchange=function(){
+			isFill=fillChecked.checked;
+		}
+		
+		editChecked.onchange=function(){
+			isEdit=editChecked.checked;
+		}
+		
+		eraseAll.onclick=function(){
+			pen.clearRect(0,0,canvas.width,canvas.height);
+			drawGrid("rgba(0,0,0,0.2)",10,10);
+		}
+		
+	}
+	
+</script>
+</head>
+
+<body>
+	
+	<div id="control">
+		Stroke Style:
+		<select id="strokeStyleSelect">
+			<option value="red" selected>red</option>
+			<option value="green">green</option>
+			<option value="blue">blue</option>
+			<option value="orange">orange</option>
+			<option value="cornflowerblue">cornflowerblue</option>
+			<option value="goldenrod">goldenrod</option>
+			<option value="navy">navy</option>
+			<option value="purple">purple</option>
+		</select>
+		Fill Style:
+		<select id="fillStyleSelect">
+			<option value="red">red</option>
+			<option value="green">green</option>
+			<option value="blue">blue</option>
+			<option value="orange">orange</option>
+			<option value="cornflowerblue">cornflowerblue</option>
+			<option value="goldenrod">goldenrod</option>
+			<option value="navy">navy</option>
+			<option value="purple" selected>purple</option>
+		</select>
+		Sides:
+		<select id="sides">
+			<option value="3">3</option>
+			<option value="4">4</option>
+			<option value="5">5</option>
+			<option value="6">6</option>
+			<option value="7">7</option>
+			<option value="8" selected>8</option>
+		</select>
+		Start angle:
+		<select id="startAngle">
+			<option value="0" selected>0</option>
+			<option value="10">10</option>
+			<option value="20">20</option>
+			<option value="30">30</option>
+			<option value="40">40</option>
+			<option value="45">45</option>
+			<option value="50">50</option>
+			<option value="60">60</option>
+			<option value="70">70</option>
+			<option value="80">80</option>
+			<option value="90">90</option>
+		</select>
+		Fill:
+		<input type="checkbox" id="fillChecked" checked>
+		Edit:
+		<input type="checkbox" id="editChecked">
+		<input type="button" value="Erase All" id="eraseButton">
+	</div>
+	<canvas id="canvas"></canvas>
+	<div id="infoPrompt">
+		<p id="info">该web程序有绘图和编辑两种模式，初始为绘图模式，你可以通过上方的控制栏选择所画图形的描边颜色，填充颜色，边数，角度以及是否填充。当选择Edit，则进入编辑模式，可通过拖拽鼠标移动图形</p>
+		<button id="btn">确定</button>
+	</div>
+	
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

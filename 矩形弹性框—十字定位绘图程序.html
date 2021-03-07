@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HTML5 Canvas核心技术</title>
+
+<style type="text/css">
+	
+	html,body {
+		padding:0px;
+		margin: 0px;
+	}
+	
+	#canvas {
+		display:block;
+		background: #C8C8C8;
+	}
+	
+	#control {
+		display:flex;
+		justify-content:center;
+		align-items: center;
+		height: 6vh;
+	}
+	
+	p{
+		padding:0px;
+		margin: 0px;
+	}
+	
+	#start {
+		margin-right:10px;
+	}
+	
+	#end {
+		margin-right:20px;
+	}
+		
+</style>
+<script type="text/javascript">
+	
+	window.onload=function(){
+		
+		var canvas=document.getElementById("canvas"),
+			pen=canvas.getContext("2d"),
+			strokeColorSelect=document.getElementById("strokeStyleSelect"),
+			checkBox=document.getElementById("checkBox"),
+			rectRefer=document.getElementById("rectfer"),
+			eraseAll=document.getElementById("eraseAll"),
+			drawingSurfaceImageData,
+			startP=document.getElementById("start"),
+			endP=document.getElementById("end"),
+			mouseDown={
+				x:0,
+				y:0
+			},
+			rubberbandRect={
+				x:0,
+				y:0,
+				width:0,
+				height:0
+			},
+			isdragging=false,
+			isGuideChecked=checkBox.checked,
+			isRectReferChecked=rectRefer.checked;
+		
+		canvas.width=window.innerWidth;
+		canvas.height=0.94*window.innerHeight;
+		
+		// ............function...................
+		function drawGrid(lineColor,stepX,stepY){
+			pen.save();
+			pen.strokeStyle=lineColor;
+			pen.lineWidth=0.5;
+			
+			pen.beginPath();
+			for(var i=0.5+stepX;i<canvas.width;i+=stepX){
+				pen.moveTo(i,0);
+				pen.lineTo(i,canvas.height);
+			}
+			for(var i=0.5+stepY;i<canvas.height;i+=stepY){
+				pen.moveTo(0,i);
+				pen.lineTo(canvas.width,i);
+			}
+			pen.stroke();
+			pen.restore();
+		}
+		
+		function windowToCanvas(x,y){
+			var canvasBoud=canvas.getBoundingClientRect();
+			return {
+				x:x-canvasBoud.left,
+				y:y-canvasBoud.top
+			}
+		}
+		
+		function saveCanvasData(){
+			drawingSurfaceImageData=pen.getImageData(0,0,canvas.width,canvas.height);
+		}
+		
+		function upRubberbandRect(loc){
+			rubberbandRect.width=Math.abs(loc.x-mouseDown.x);
+			rubberbandRect.height=Math.abs(loc.y-mouseDown.y);
+			rubberbandRect.x=loc.x>mouseDown.x? mouseDown.x:loc.x;
+			rubberbandRect.y=loc.y>mouseDown.y? mouseDown.y:loc.y;
+		}
+		
+		function restoreCanvasData(){
+			pen.putImageData(drawingSurfaceImageData,0,0);
+		}
+		
+		function drawGuideJiaoCha(loc){
+			pen.beginPath();
+			pen.save();
+			pen.strokeStyle="blue";
+			pen.moveTo(loc.x,0);
+			pen.lineTo(loc.x,canvas.height);
+			pen.moveTo(0,loc.y);
+			pen.lineTo(canvas.width,loc.y);
+			pen.stroke();
+			pen.restore();
+		}
+		
+		function drawLine(base,target){
+			pen.beginPath();
+			pen.moveTo(base.x,base.y);
+			pen.lineTo(target.x,target.y);
+			pen.stroke();
+		}
+		
+		//.............mouse_event.................
+		canvas.onmousedown=function(e){
+			e.preventDefault();
+			saveCanvasData();
+			var canvasZuoBiao=windowToCanvas(e.clientX,e.clientY);
+			mouseDown.x=canvasZuoBiao.x;
+			mouseDown.y=canvasZuoBiao.y;
+			startP.innerHTML="("+Math.floor(canvasZuoBiao.x)+","+Math.floor(canvasZuoBiao.y)+")";
+			isdragging=true;
+		}
+		
+		canvas.onmousemove=function(e){
+			if(isdragging){
+				e.preventDefault();
+				var loc=windowToCanvas(e.clientX,e.clientY);
+				upRubberbandRect(loc);
+				restoreCanvasData();
+
+				if(isRectReferChecked){
+					pen.save();
+					pen.strokeStyle="blue";
+					pen.strokeRect(rubberbandRect.x,rubberbandRect.y,rubberbandRect.width,rubberbandRect.height);
+					pen.restore();
+				}
+				if(isGuideChecked){
+					drawGuideJiaoCha(loc);
+				}
+				drawLine(mouseDown,loc);
+				endP.innerHTML="("+Math.floor(loc.x)+","+Math.floor(loc.y)+")";
+			}
+		}
+		
+		canvas.onmouseup=function(e){
+			e.preventDefault();
+			isdragging=false;
+			var loc=windowToCanvas(e.clientX,e.clientY);
+			restoreCanvasData();
+			drawLine(mouseDown,loc);
+		}
+		
+		//............checked_event...............
+		checkBox.onchange=function(){
+			isGuideChecked=checkBox.checked;
+		}
+		
+		rectRefer.onchange=function(){
+			isRectReferChecked=rectRefer.checked;
+		}
+		
+		eraseAll.onclick=function(){
+			pen.clearRect(0,0,canvas.width,canvas.height);
+			drawGrid("rgba(0,0,0,0.2)",10,10);
+		}
+		
+		strokeColorSelect.onchange=function(){
+			pen.strokeStyle=strokeColorSelect.value;
+		}
+		
+		//............Initialization..............
+		pen.strokeStyle=strokeColorSelect.value;
+		pen.lineWidth=0.5;
+		drawGrid("rgba(0,0,0,0.2)",10,10);
+		
+	}
+	
+</script>
+</head>
+
+<body>
+	
+	<div id="control">
+		start:
+		<p id="start">(0,0)</p>
+		end:
+		<p id="end">(0,0)</p>
+		Stroke color:
+		<select id="strokeStyleSelect">
+			<option value="red" selected>red</option>
+			<option value="green">green</option>
+			<option value="blue">blue</option>
+			<option value="orange">orange</option>
+			<option value="cornflowerblue">cornflowerblue</option>
+			<option value="goldenrod">goldenrod</option>
+			<option value="navy">navy</option>
+			<option value="purple">purple</option>
+		</select>
+		
+		十字定位:
+		<input id="checkBox" type="checkbox" checked>
+		矩形定位:
+		<input id="rectfer" type="checkbox">
+		<input id="eraseAll" type="button" value="erase All">
+	</div>
+	<canvas id="canvas"></canvas>
+	
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

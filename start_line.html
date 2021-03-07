@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>我的点,线</title>
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+<style type="text/css">
+	
+	html,body{
+		padding:0px;
+		margin: 0px;
+	}
+	
+	#canvas{
+		display:block;
+		background: black;
+		position: absolute;
+		z-index: 1;
+	}
+	
+	#takePhoto {
+		position:absolute;
+		z-index: 2;
+		top: 40px;
+		left: 40px;
+		width: 160px;
+		height: 130px;
+		border-radius: 10px;
+		border: solid 0px black;
+		background: rgba(255,255,255,0.3);
+		color:aqua;
+	}
+	
+	#takePhoto:hover {
+		background:rgba(255,255,255,0.5);
+	}
+	
+	#zhanshi {
+		width:50vw;
+		height: 50vh;
+		position: absolute;
+		top: 25vh;
+		left: 25vw;
+		border: solid 1px white;
+		border-radius: 10px;
+		z-index: 2;
+		display: none;
+		background: black;
+	}
+	
+</style>
+<script type="text/javascript">
+	
+	window.onload=function(){
+		var canvas=document.getElementById("canvas");
+		var pen=canvas.getContext("2d");
+		var img=document.getElementById("zhanshi"),
+			btn=document.getElementById("takePhoto");
+		pen.lineWidth=0.3;
+		
+		canvas.width=window.innerWidth;
+		canvas.height=window.innerHeight;
+		
+		var baseDot={
+			x:0.5*canvas.width,
+			y:0.5*canvas.height
+		}
+		
+		$(canvas).on("mousemove",function(e){
+			baseDot.x=e.pageX;
+			baseDot.y=e.pageY;
+		});
+		
+		$(canvas).on("mouseout",function(e){
+			baseDot.x=0.5*canvas.width;
+			baseDot.y=0.5*canvas.height;
+		})
+		
+		function color(){
+			this.r=Math.floor(Math.random()*255);
+			this.g=Math.floor(Math.random()*255);
+			this.b=Math.floor(Math.random()*255);
+			this.colorValues="rgba("+this.r+","+this.g+","+this.b+",1)";
+		}
+		
+		function dot(){
+			this.x=Math.random()*canvas.width;
+			this.y=Math.random()*canvas.height;
+			
+			this.vx=Math.random()-0.5;
+			this.vy=Math.random()-0.5;
+			
+			this.radius=Math.random()*2;
+			this.style=new color();
+		}
+		
+		var dots={
+			dotsNumber:400,
+			distance:100,
+			r_radius:150,
+			dotsArray:[]
+		}
+		
+		function createDots(){
+			var length=dots.dotsNumber,i;
+			for(i=0;i<length;i++){
+				dots.dotsArray.push(new dot());
+			}
+		}
+		
+		function drawDots(){
+			var dot,i;
+			var length=dots.dotsNumber;
+			for(i=0;i<length;i++){
+				dot=dots.dotsArray[i];
+				pen.beginPath();
+				pen.fillStyle=dot.style.colorValues;
+				pen.arc(dot.x,dot.y,dot.radius,0,Math.PI*2,false);
+				pen.fill();
+			}
+		}
+		
+		function getLineColor(dot){
+			var color=dot.style;
+			return "rgba("+color.r+","+color.g+","+color.b+",0.6)";
+		}
+		
+		function lineDots(){
+			var i,j,dot_1,dot_2;
+			for(i=0;i<dots.dotsNumber;i++){
+				for(j=0;j<dots.dotsNumber;j++){
+					dot_1=dots.dotsArray[i];
+					dot_2=dots.dotsArray[j];
+					if(Math.abs(dot_1.x-dot_2.x)<=dots.distance && Math.abs(dot_1.y-dot_2.y)<=dots.distance){
+						if(Math.abs(dot_1.x-baseDot.x)<=dots.r_radius && Math.abs(dot_1.y-baseDot.y)<=dots.r_radius){
+							pen.beginPath();
+							pen.strokeStyle=getLineColor(dot_1);
+							pen.moveTo(dot_1.x,dot_1.y);
+							pen.lineTo(dot_2.x,dot_2.y);
+							pen.stroke();
+							pen.closePath();
+						}
+					}
+				}
+			}
+		}
+		
+		function moveDots(){
+			var length=dots.dotsNumber,i,dot;
+			for(i=0;i<length;i++){
+				dot=dots.dotsArray[i];
+				if(dot.x<0 || dot.x>canvas.width){
+					dot.vx=-dot.vx;
+					dot.vy=dot.vy;
+				}
+				if(dot.y<0 || dot.y>canvas.height){
+					dot.vx=dot.vx;
+					dot.vy=-dot.vy;
+				}
+				dot.x+=dot.vx;
+				dot.y+=dot.vy;
+			}
+		}
+		
+		function animateDots(){
+			pen.clearRect(0,0,canvas.width,canvas.height);
+			
+			drawDots();
+			lineDots();
+			moveDots();
+			
+			window.requestAnimationFrame(animateDots);
+		}
+		
+		createDots();
+		animateDots();
+		
+		btn.onclick=function(){
+			var dataUrl;
+			if(btn.innerHTML=="take photo"){
+				btn.innerHTML="return";
+				dataUrl=canvas.toDataURL();
+				img.src=dataUrl;
+				img.style.display="block";
+			}else{
+				btn.innerHTML="take photo";
+				img.style.display="none";
+			}
+		}
+	}
+	
+</script>
+</head>
+
+<body>
+
+	<canvas id="canvas"></canvas>
+	<button id="takePhoto">take photo</button>
+	<img id="zhanshi">
+
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HTML5 Canvas核心技术</title>
+
+<style type="text/css">
+	
+	html,body {
+		margin:0px;
+		padding: 0px;
+	}
+	
+	#canvas {
+		position:absolute;
+		left: 20px;
+		top: 30px;
+		background:#BCBCBC;
+		z-index: 2;
+	}
+	
+	#btn {
+		position:absolute;
+		left: 20px;
+		top: 4px;
+	}
+	
+	#choose {
+		display:none;
+		position: absolute;
+		border: solid 1px black;
+		z-index: 3;
+		background: rgba(0,0,0,0.2);
+	}
+	
+	body {
+		width:100vw;
+		height: 100vh;
+		background:#BFAC95;
+	}
+		
+</style>
+<script type="text/javascript">
+	
+	window.onload=function(){
+		
+		var canvas=document.getElementById("canvas"),
+			pen=canvas.getContext("2d"),
+			img=new Image(),
+			reButton=document.getElementById("btn"),
+			chooseDiv=document.getElementById("choose"),
+			dragging=false,
+			mouseDown={
+				x:0,
+				y:0
+			},
+			Rectangle={
+				left:0,
+				top:0,
+				width:0,
+				height:0
+			};
+		
+		canvas.width=window.innerWidth/2;
+		canvas.height=window.innerHeight/3;
+		
+		img.src="ziluolan.jpg";
+		img.onload=function(){
+			pen.drawImage(img,0,0,canvas.width,canvas.height);
+		}
+		
+		reButton.onclick=function(){
+			pen.drawImage(img,0,0,canvas.width,canvas.height);
+		}
+		
+		function showChooseDiv(){
+			chooseDiv.style.display="block";
+		}
+		
+		function hideChooseDiv(){
+			chooseDiv.style.display="none";
+		}
+		
+		function changeChooseDiv(){
+			chooseDiv.style.top=Rectangle.top+"px";
+			chooseDiv.style.left=Rectangle.left+"px";
+			chooseDiv.style.width=Rectangle.width+"px";
+			chooseDiv.style.height=Rectangle.height+"px";
+		}
+		
+		canvas.onmousedown=function(e){
+			mouseDown.x=e.clientX;
+			mouseDown.y=e.clientY;
+			
+			Rectangle.left=e.clientX;
+			Rectangle.top=e.clientY;
+			Rectangle.width=0;
+			Rectangle.height=0;
+			
+			showChooseDiv();
+			changeChooseDiv();
+			
+			dragging=true;
+		}
+		
+		canvas.onmousemove=function(e){
+			if(dragging==true){
+				Rectangle.left=e.clientX>mouseDown.x? mouseDown.x:e.clientX;
+				Rectangle.top=e.clientY>mouseDown.y? mouseDown.y:e.clientY;
+				Rectangle.width=Math.abs(e.clientX-mouseDown.x);
+				Rectangle.height=Math.abs(e.clientY-mouseDown.y);
+				changeChooseDiv();
+			}
+		}
+		
+		chooseDiv.onmousemove=function(e){
+			if(dragging==true){
+				Rectangle.left=e.clientX>mouseDown.x? mouseDown.x:e.clientX;
+				Rectangle.top=e.clientY>mouseDown.y? mouseDown.y:e.clientY;
+				Rectangle.width=Math.abs(e.clientX-mouseDown.x);
+				Rectangle.height=Math.abs(e.clientY-mouseDown.y);
+				changeChooseDiv();
+			}
+		}
+		
+		window.onmouseup=function(e){
+			var bbox=canvas.getBoundingClientRect();
+			pen.drawImage(canvas,Rectangle.left-bbox.left,Rectangle.top-bbox.top,Rectangle.width,Rectangle.height,0,0,canvas.width,canvas.height);
+			dragging=false;
+			chooseDiv.style.display="none";
+		}
+		
+	}
+	
+</script>
+</head>
+
+<body>
+	
+	<button id="btn">重置</button>
+	<canvas id="canvas"></canvas>
+	<div id="choose"></div>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

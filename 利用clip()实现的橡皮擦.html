@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HTML5 Canvas核心技术</title>
+
+<style type="text/css">
+	
+	html,body {
+		padding:0px;
+		margin: 0px;
+	}
+	
+	#canvas {
+		display:block;
+		background: white;
+	}
+		
+</style>
+<script type="text/javascript">
+	
+	window.onload=function(){
+		
+		var canvas=document.getElementById("canvas"),
+			pen=canvas.getContext("2d"),
+			earseRect={
+				x:0,
+				y:0,
+				width:10,
+				height:10
+			},
+			isDragging=false;
+		
+		//...........初始化.....................
+		canvas.width=window.innerWidth;
+		canvas.height=window.innerHeight;
+		pen.fillStyle="rgba(0,0,255,0.3)";
+		pen.fillRect(0,0,canvas.width,canvas.height);
+		
+		//............function...............
+		function windowToCanvas(x,y){
+			var canvasBounds=canvas.getBoundingClientRect();
+			return {
+				x:x-canvasBounds.left,
+				y:y-canvasBounds.top
+			}
+		}
+		
+		function upEarseRect(loc){
+			earseRect.x=loc.x-earseRect.width/2;
+			earseRect.y=loc.y-earseRect.height/2;
+		}
+		//............鼠标事件..............
+		canvas.onmousedown=function(e){
+			var loc=windowToCanvas(e.clientX,e.clientY);
+			upEarseRect(loc);
+			isDragging=true;
+			pen.beginPath();
+			pen.save();
+			pen.rect(earseRect.x,earseRect.y,earseRect.width,earseRect.height);
+			pen.clip();
+			pen.clearRect(0,0,canvas.width,canvas.height);
+			pen.restore();
+		}
+		
+		canvas.onmousemove=function(e){
+			if(isDragging){
+				var loc=windowToCanvas(e.clientX,e.clientY);
+				upEarseRect(loc);
+				pen.beginPath()
+				pen.save();
+				pen.rect(earseRect.x,earseRect.y,earseRect.width,earseRect.height);
+				pen.clip();
+				pen.clearRect(0,0,canvas.width,canvas.height);
+				pen.restore();
+			}
+		}
+		
+		canvas.onmouseup=function(e){
+			isDragging=false;
+		}
+		
+	}
+	
+</script>
+</head>
+
+<body>
+	
+	<canvas id="canvas"></canvas>
+	
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>精灵坐标查看器</title>
+
+<style type="text/css">
+	
+	html,body {
+		margin:0px;
+		padding: 0px;
+	}
+	
+	#canvas {
+		background: #D2D2D2;
+		display: block;
+		margin-top: 6px;
+	}
+	
+	#canvas:hover {
+		cursor:crosshair;
+	}
+	
+	#info {
+		display: block;
+		height: 1em;
+	}
+		
+</style>
+<script type="text/javascript">
+	
+	window.onload=function(){
+		
+		var canvas=document.getElementById("canvas"),
+			pen=canvas.getContext("2d"),
+			info=document.getElementById("info");
+		
+		canvas.width=window.innerWidth/2;
+		canvas.height=window.innerHeight/2;
+	
+		function windowToCanvas(can,x,y){
+			var bbox=can.getBoundingClientRect();
+			return {
+				x:x-bbox.left,
+				y:y-bbox.top
+			}
+		}
+		
+		function drawBackgroundLines(){
+			var linesNumber=12,
+				canvasHeight=canvas.height;
+			
+			var juli=canvasHeight/(linesNumber+1);
+			pen.beginPath();
+			pen.strokeStyle="rgba(255,255,0,0.8)";
+			for(var i=1;i<=12;i++){
+				pen.moveTo(0,i*juli);
+				pen.lineTo(canvas.width,i*juli);
+			}
+			pen.stroke();
+		}
+		drawBackgroundLines();
+		
+		function drawGuideLines(x,y){
+			pen.beginPath();
+			pen.strokeStyle="rgba(255,0,0,0.6)";
+			drawHorizontalLine(y);
+			drawVerticalLine(x);
+			pen.stroke();
+		}
+		
+		function drawHorizontalLine(y){
+			pen.moveTo(0,y);
+			pen.lineTo(canvas.width,y);
+		}
+		
+		function drawVerticalLine(x){
+			pen.moveTo(x,0);
+			pen.lineTo(x,canvas.height);
+		}
+		
+		function upInfoData(x,y){
+			info.innerText="("+x+","+y+")";
+		}
+			
+		canvas.onmousemove=function(e){
+			var loc=windowToCanvas(canvas,e.clientX,e.clientY);
+			
+			pen.clearRect(0,0,canvas.width,canvas.height);
+			drawBackgroundLines();
+			drawGuideLines(loc.x,loc.y);
+			upInfoData(loc.x,loc.y);
+		}
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</script>
+</head>
+
+<body>
+	<div id="info">(0,0)</div>
+	<canvas id="canvas"></canvas>
+
+</body>
+</html>

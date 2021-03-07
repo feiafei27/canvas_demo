@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HTML5 Canvas核心技术</title>
+
+<style type="text/css">
+	
+	html,body {
+		padding:0px;
+		margin: 0px;
+	}
+	
+	#canvas {
+		display:block;
+		background: #D2D2D2;
+	}
+		
+</style>
+<script type="text/javascript">
+	
+	window.onload=function(){
+		
+		var canvas=document.getElementById("canvas"),
+			pen=canvas.getContext("2d");
+		
+		var circles=[],
+			chooseCircleIndex=null,
+			canvasImageData,
+			isDragging=false;
+		
+		//.........圆的函数对象.................
+		var	circle=function(x,y,r){
+			this.x=x;
+			this.y=y;
+			this.r=r;
+		}
+		
+		circle.prototype={
+			drawPath:function(){
+				pen.beginPath();
+				pen.arc(this.x,this.y,this.r,0,Math.PI*2,false);
+			},
+			drawCircle:function(){
+				pen.stroke();
+				pen.fill();
+			},
+			move:function(x,y){
+				this.x=x;
+				this.y=y;
+			}
+		}
+		//..............初始化..................
+		canvas.width=window.innerWidth;
+		canvas.height=window.innerHeight;
+		drawGrid("rgba(0,0,0,0.2)",10,10);
+		circles.push(new circle(200,200,5));
+		circles.push(new circle(700,200,5));
+		circles.push(new circle(200,500,5));
+		circles.push(new circle(700,500,5));
+		circles.forEach(function(c){
+			c.drawPath();
+			c.drawCircle();
+		})
+		
+		drawBezierCurve(circles);
+		
+		//...............function...............
+		function drawGrid(lineColor,stepX,stepY){
+			pen.save();
+			pen.strokeStyle=lineColor;
+			pen.lineWidth=0.5;
+			pen.beginPath();
+			for(var i=0.5+stepX;i<canvas.width;i+=stepX){
+				pen.moveTo(i,0);
+				pen.lineTo(i,canvas.height);
+			}
+			for(var i=0.5+stepY;i<canvas.height;i+=stepY){
+				pen.moveTo(0,i);
+				pen.lineTo(canvas.width,i);
+			}
+			pen.stroke();
+			pen.restore();
+		}
+		
+		function windowToCanvas(x,y){
+			var canvasBounds=canvas.getBoundingClientRect();
+			return {
+				x:x-canvasBounds.left,
+				y:y-canvasBounds.top
+			}
+		}
+		
+		function upCanvasCircleMove(loc){
+			pen.clearRect(0,0,canvas.width,canvas.height);
+			drawGrid("rgba(0,0,0,0.2)",10,10);
+			circles.forEach(function(c,index,arr){
+				c.drawPath();
+				if(pen.isPointInPath(loc.x,loc.y)){
+					chooseCircleIndex=index;
+				}else{
+					c.drawCircle();
+				}
+			});
+			if(chooseCircleIndex!=null){
+				canvasImageData=pen.getImageData(0,0,canvas.width,canvas.height);
+				isDragging=true;
+				circles[chooseCircleIndex].drawPath();
+				circles[chooseCircleIndex].drawCircle();
+			}
+			drawBezierCurve(circles);
+		}
+		
+		function drawBezierCurve(cs){
+			pen.beginPath();
+			pen.moveTo(cs[0].x,cs[0].y);
+			pen.bezierCurveTo(cs[1].x,cs[1].y,
+							 cs[2].x,cs[2].y,
+							 cs[3].x,cs[3].y);
+			pen.stroke();
+		}
+		
+		//................鼠标事件...............
+		canvas.onmousedown=function(e){
+			var location=windowToCanvas(e.clientX,e.clientY);
+			upCanvasCircleMove(location);
+		}
+		
+		canvas.onmousemove=function(e){
+			var location=windowToCanvas(e.clientX,e.clientY);
+			if(isDragging){
+				pen.putImageData(canvasImageData,0,0);
+				circles[chooseCircleIndex].move(location.x,location.y);
+				circles[chooseCircleIndex].drawPath();
+				circles[chooseCircleIndex].drawCircle();
+				drawBezierCurve(circles);
+			}
+		}
+		
+		canvas.onmouseup=function(e){
+			isDragging=false;
+			chooseCircleIndex=null;
+		}
+		
+	}
+	
+</script>
+</head>
+
+<body>
+	
+	<canvas id="canvas"></canvas>
+	
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

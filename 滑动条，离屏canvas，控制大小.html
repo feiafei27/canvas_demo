@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>无标题文档</title>
+<style type="text/css">
+	
+	html,body {
+		padding:0px;
+		margin: 0px;
+	}
+	
+	#canvas {
+		display:block;
+		background:#D7D7D7;
+		margin-top: 10px;
+	}
+	
+	#control {
+		position:relative;
+	}
+	
+	#scaleSlider {
+		position:absolute;
+		left: 40px;
+	}
+	
+</style>
+<script type="text/javascript">
+	
+	window.onload=function(){
+		var canvas=document.getElementById("canvas"),
+			offCanvas=document.createElement("canvas"),
+			output=document.getElementById("scaleOutput"),
+			slider=document.getElementById("scaleSlider"),
+			pen=canvas.getContext("2d"),
+			offPen=offCanvas.getContext("2d"),
+			img=new Image();
+		
+		//...............初始化...............
+		canvas.width=window.innerWidth;
+		canvas.height=window.innerHeight*0.95;
+		offCanvas.width=canvas.width;
+		offCanvas.height=canvas.height;
+		img.src="ziluolan.jpg";
+		img.onload=function(){
+			offPen.drawImage(img,0,0,offCanvas.width,offCanvas.height);
+			pen.drawImage(img,0,0,canvas.width,canvas.height);
+		}
+		
+		//............event..................
+		slider.onchange=function(e){
+			var scale=e.target.value;
+			output.innerHTML=scale;
+			var scaleNumber=Number(scale);
+			var kuan=offCanvas.width/scaleNumber;
+			var gao=offCanvas.height/scaleNumber;
+			pen.drawImage(offCanvas,offCanvas.width/2-kuan/2,offCanvas.height/2-gao/2,kuan,gao,0,0,canvas.width,canvas.height);
+		}
+		
+	}
+	
+</script>
+</head>
+
+<body>
+
+	<div id="control">
+		<output id="scaleOutput">1.0</output>
+		<input id="scaleSlider" type="range" min="1.0" max="3.0" step="0.01" value="1.0">
+	</div>
+	<canvas id="canvas"></canvas>
+
+</body>
+</html>
